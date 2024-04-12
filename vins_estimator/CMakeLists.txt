@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 2.8.3)
 project(vins)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++17")
 #-DEIGEN_USE_MKL_ALL")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
+
+set(Torch_DIR "/home/ubt/code/thirdparty/libtorch_cpp_cpu/libtorch/share/cmake/Torch")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -17,12 +19,16 @@ find_package(catkin REQUIRED COMPONENTS
     image_transport)
 
 find_package(OpenCV REQUIRED)
+find_package(Torch REQUIRED)
+
 
 # message(WARNING "OpenCV_VERSION: ${OpenCV_VERSION}")
 
 find_package(Ceres REQUIRED)
 
 include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
+include_directories(${TORCH_INCLUDE_DIRS})
+include_directories(/home/ubt/code/vslam/vins_ws/src/VINS-Fusion/vins_estimator/src/SuperPointCPP/include)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Eigen3)
@@ -32,6 +38,8 @@ include_directories(
 )
 
 catkin_package()
+
+add_subdirectory(src/SuperPointCPP)
 
 add_library(vins_lib
     src/estimator/parameters.cpp
@@ -49,16 +57,20 @@ add_library(vins_lib
     src/initial/initial_aligment.cpp
     src/initial/initial_sfm.cpp
     src/initial/initial_ex_rotation.cpp
-    src/featureTracker/feature_tracker.cpp)
-target_link_libraries(vins_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+    src/featureTracker/feature_tracker.cpp
+    /home/ubt/code/vslam/vins_ws/src/VINS-Fusion/vins_estimator/src/SuperPointCPP/src/NetWork.cpp
+    /home/ubt/code/vslam/vins_ws/src/VINS-Fusion/vins_estimator/src/SuperPointCPP/src/PointTracker.cpp
+    /home/ubt/code/vslam/vins_ws/src/VINS-Fusion/vins_estimator/src/SuperPointCPP/src/SuperPointFrontend.cpp
+    )
+target_link_libraries(vins_lib   ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES}  superpoint_cpp)
 
 
 add_executable(vins_node src/rosNodeTest.cpp)
-target_link_libraries(vins_node vins_lib) 
+target_link_libraries(vins_node vins_lib superpoint_cpp) 
 
 add_executable(kitti_odom_test src/KITTIOdomTest.cpp)
-target_link_libraries(kitti_odom_test vins_lib) 
+target_link_libraries(kitti_odom_test vins_lib superpoint_cpp) 
 
 add_executable(kitti_gps_test src/KITTIGPSTest.cpp)
-target_link_libraries(kitti_gps_test vins_lib) 
+target_link_libraries(kitti_gps_test vins_lib superpoint_cpp) 
 
